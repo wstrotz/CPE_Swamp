@@ -1,7 +1,6 @@
 /* Swamp cooler code by Willaim Strotz and D. Min.
  *  For cpe 301 Final progect.
  *  Revision 1.
- *  hello i am the spagetti man and this just exists for teahing myself github.
  */
  // Defines
  // Declarations
