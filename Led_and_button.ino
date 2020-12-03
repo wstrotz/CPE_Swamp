@@ -23,7 +23,6 @@
  //Main
  void loop()
  {
-  Serial.println("fcukme");
   if (DetectErr() == 1)
   {
    WritePin(1,2,1); //R on
