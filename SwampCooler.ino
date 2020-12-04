@@ -1,28 +1,46 @@
 /* Swamp cooler code by Willaim Strotz and D. Min.
  *  For cpe 301 Final progect.
  *  Revision 1.
+ *  this will be the uplaod adding the real time clock and alerts
  */
+ // Includes
+ #include <Wire.h>
+ #include <RTClib.h>
+ #include <Servo.h>
  // Defines
+ RTC_DS1307 rtc;
  // Declarations
  volatile unsigned char* DDRLed = (unsigned char*) 0x21;
  volatile unsigned char* PortLed = (unsigned char*) 0x22; //LED wired that pa0 is green, pa1 is yellow, pa2 is red
  volatile unsigned char* PinLed = (unsigned char*) 0x20;
+ const byte seconds = 0;//initial time is set here
+ const byte hours = 0;
+ const byte minutes = 0;
+ volatile unsigned int Pos = 0;
+ Servo vent;
  
  //Protos (done automagically thru ardu apparently) lol guess not.
  unsigned int OnOffStat();
  unsigned int DetectErr();
  void WritePin(unsigned char Reg, unsigned char pin, unsigned char state);
+ void GetTime();
  
  //Setup
  void setup()
  {
   Serial.begin(9600);
+  rtc.begin();//start clock
+  vent.attach(9);//attaches servo to analog pin 9
   *DDRLed |= 0b00000111; //sets led to outputs and button to an input
   volatile unsigned int State = 2; //state of machine, 1 green go, 2 yellow idle
  }
  //Main
  void loop()
  {
+  Pos = analogRead(2);
+  Serial.println(Pos);
+  Pos = map(Pos, 0, 1023, 0, 180);
+  vent.write(Pos);
   if (DetectErr() == 1)
   {
    WritePin(1,2,1); //R on
@@ -85,4 +103,23 @@ void WritePin(unsigned char Reg, unsigned char pin, unsigned char state)//functi
       *PortLed |= 0x01 << pin;
       }
   } 
+}
+//-----------------
+void GetTime()//prints the real time time and date
+{
+  DateTime now = rtc.now();
+  Serial.print(now.month(), DEC);
+  Serial.print("/");
+  Serial.print(now.day());
+  Serial.print("/");
+  Serial.print(now.year());
+  Serial.print("  ");
+  Serial.print(now.hour());
+  Serial.print(":");
+  Serial.print(now.minute());
+  Serial.print(":");
+  Serial.print(now.minute());
+  Serial.print(":");
+  Serial.print(now.second());
+  Serial.println();
 }
