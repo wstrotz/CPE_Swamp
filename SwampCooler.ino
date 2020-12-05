@@ -1,8 +1,7 @@
 /* Swamp cooler code by Willaim Strotz and D. Min.
  *  For cpe 301 Final progect.
  *  Revision 3.
- *  this will be the uplaod adding much sensor functionality.
- *  redid switch as well
+ *  fixed count duku
  */
  // Includes
  //#include <Wire.h>
@@ -14,6 +13,7 @@
  RTC_DS1307 rtc;
  Servo vent;
  dht DHT;
+ #define maxtemp 26
  
  // Declarations
  volatile unsigned char* DDRLed = (unsigned char*) 0x21;
@@ -27,6 +27,7 @@
  LiquidCrystal lcd(13, 12, 11, 10, 8, 7); //maps the pins to the lcd
  volatile unsigned int State = 2; //state of machine, 1 green go, 2 yellow idle
  unsigned int dispCounter = 0;
+ unsigned int CountDuku = 0;
  
  //Protos (done automagically thru ardu apparently) lol guess not.
  unsigned int OnOffStat();
@@ -54,33 +55,40 @@
     dispCounter = 0;
   }
   Pos = analogRead(2);
-  Serial.println(Pos);
   Pos = map(Pos, 0, 1023, 0, 180);
   vent.write(Pos);
-  if (DetectErr() == 1)
+  if ((DetectErr()) == 1 && (CountDuku == 0))
   {
    WritePin(1,2,1); //R on
    WritePin(1,1,0); //Y off
    WritePin(1,0,0); //G off
-   for (volatile unsigned int i = 0; i < 1000; i++); //wasting time
+   WritePin(1,4,0); // motor off
+   Serial.print("Low water, refil to resume ");
+   GetTime();
+   CountDuku++;
   }
   else if (DetectErr() == 0)
   {
+   CountDuku = 0;
    switch (OnOffStat()) //essentially 2 seperate paths for the 2 active states above
    {
     case 1: //green go state 
       WritePin(1,2,0); //R off
       WritePin(1,1,0); //Y off 
       WritePin(1,0,1); //G on
-     // WritePin(1,4,1);
-     DispStats();
+      WritePin(1,4,1);
+      Serial.print("fan on at ");
+      GetTime();
+      
     break;
 
     case 2: //yellow idle state
       WritePin(1,2,0); //R off
       WritePin(1,1,1); //Y on
       WritePin(1,0,0); //G off
-     // WritePin(1,4,0);
+      WritePin(1,4,0);
+      Serial.print("fan off at ");
+      GetTime();
     break; 
    }
   }
@@ -113,9 +121,9 @@ unsigned int DetectErr() //function should detect if an error is occuring. 1 if 
 {
   if (analogRead(10) < 200)
   {
-    return 1;
+   return 1;
   }
-  return 0;
+ return 0;
 }
 //-----------------
 void WritePin(unsigned char Reg, unsigned char pin, unsigned char state)//function is a writing to pin , register a=1 b=2 etc00, pi, then on or off.
@@ -159,6 +167,7 @@ void DispStats() //displays temp and humiditiy on lcd
   int chk = DHT.read11(5); // checks for a good read
   if (0 == chk)
   {
+  lcd.begin(16,2);
   lcd.setCursor(0,0); 
   lcd.print("Temp: ");
   lcd.print(DHT.temperature);
