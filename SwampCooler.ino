@@ -27,7 +27,12 @@
  LiquidCrystal lcd(13, 12, 11, 10, 8, 7); //maps the pins to the lcd
  volatile unsigned int State = 2; //state of machine, 1 green go, 2 yellow idle
  unsigned int dispCounter = 0;
- unsigned int CountDuku = 0;
+ unsigned int CountDuku = 0; //counters for the serial
+ unsigned int CountDuku2 = 0;
+ unsigned int CountDuku3 = 0;
+ unsigned int CountDuku4 = 0;
+ unsigned int ct = 0;
+ unsigned int ret = 0;
  
  //Protos (done automagically thru ardu apparently) lol guess not.
  unsigned int OnOffStat();
@@ -73,22 +78,46 @@
    switch (OnOffStat()) //essentially 2 seperate paths for the 2 active states above
    {
     case 1: //green go state 
+      CountDuku4 = 0;
       WritePin(1,2,0); //R off
       WritePin(1,1,0); //Y off 
       WritePin(1,0,1); //G on
-      WritePin(1,4,1);
-      Serial.print("fan on at ");
-      GetTime();
-      
+      if (ct > 26)
+      {
+       WritePin(1,4,1);
+       if (CountDuku2 == 0)
+       {
+        Serial.print("Fan on at ");
+        GetTime();
+        CountDuku2++; 
+        CountDuku3 = 0;
+       }
+      }
+      else if (ct < 26)
+      {
+       WritePin(1,4,0);
+       if (CountDuku3 == 0)
+       {
+        Serial.print("Fan off at ");
+        GetTime();
+        CountDuku3++;
+       }
+      }
     break;
 
     case 2: //yellow idle state
+      CountDuku2 = 0;
+      CountDuku3 = 0;
       WritePin(1,2,0); //R off
       WritePin(1,1,1); //Y on
       WritePin(1,0,0); //G off
       WritePin(1,4,0);
-      Serial.print("fan off at ");
-      GetTime();
+      if (CountDuku4 == 0)
+      {
+       Serial.print("Cooling diabled at ");
+       GetTime();
+       CountDuku4++;
+      }
     break; 
    }
   }
@@ -98,10 +127,9 @@ unsigned int OnOffStat()//detects button push, refrences the leds then outputs t
 {
   long t = 0;
   long db = 200;
-  unsigned int ret = 0;
   unsigned int red = 0;
   red = (*PinLed & 0b00001000);
-  if ((*PinLed & 0b00001000)&&(prev == 0)&&(millis() - t > db)) //button press?
+  if ((*PinLed & 0b00001000)&&(prev == 0)&&(millis() - t > db)) //button press and debug?
   {
      if (*PinLed & 0b00000001)//if last state was on
       {
@@ -170,7 +198,7 @@ void DispStats() //displays temp and humiditiy on lcd
   lcd.begin(16,2);
   lcd.setCursor(0,0); 
   lcd.print("Temp: ");
-  lcd.print(DHT.temperature);
+  lcd.print(ct = DHT.temperature);
   lcd.print((char)223);
   lcd.print("C");
   lcd.setCursor(0,1);
@@ -179,3 +207,4 @@ void DispStats() //displays temp and humiditiy on lcd
   lcd.print("%"); 
   }
 }
+//-----------------
