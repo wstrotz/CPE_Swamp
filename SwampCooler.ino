@@ -118,7 +118,8 @@
       WritePin(1,2,0); //R off
       WritePin(1,1,1); //Y on
       WritePin(1,0,0); //G off
-      WritePin(1,4,0);
+      WritePin(1,5,0); //B off
+      WritePin(1,4,0); //motor off
       LastState = 0;
       if (CountDuku4 == 0)
       {
@@ -155,10 +156,10 @@ unsigned int OnOffStat()//detects button push, refrences the leds then outputs t
 //-----------------
 unsigned int DetectErr() //function should detect if an error is occuring. 1 if error 0 if none.
 {
-  if (analogRead(10) < 200)
-  {
-   return 1;
-  }
+  //if (analogRead(10) < 200)
+ // {
+  // return 1;
+ // }
  return 0;
 }
 //-----------------
