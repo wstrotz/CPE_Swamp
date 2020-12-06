@@ -2,6 +2,7 @@
  *  For cpe 301 Final progect.
  *  Revision 3.
  *  fixed count duku
+ *  fixed led onoffstat and added blue led i missed
  */
  // Includes
  //#include <Wire.h>
@@ -13,7 +14,7 @@
  RTC_DS1307 rtc;
  Servo vent;
  dht DHT;
- #define maxtemp 26
+ #define maxtemp 28
  
  // Declarations
  volatile unsigned char* DDRLed = (unsigned char*) 0x21;
@@ -33,6 +34,7 @@
  unsigned int CountDuku4 = 0;
  unsigned int ct = 0;
  unsigned int ret = 0;
+ unsigned int LastState = 0;
  
  //Protos (done automagically thru ardu apparently) lol guess not.
  unsigned int OnOffStat();
@@ -48,7 +50,7 @@
   rtc.begin();//start clock
   vent.attach(9);//attaches servo to analog pin 9
   lcd.begin(16, 2);
-  *DDRLed |= 0b00010111; //sets led to outputs and button to an input
+  *DDRLed |= 0b00110111; //sets led to outputs and button to an input
  }
  //Main
  void loop()
@@ -81,23 +83,28 @@
       CountDuku4 = 0;
       WritePin(1,2,0); //R off
       WritePin(1,1,0); //Y off 
-      WritePin(1,0,1); //G on
-      if (ct > 26)
+      
+      LastState = 1;
+      if (ct > maxtemp)
       {
        WritePin(1,4,1);
        if (CountDuku2 == 0)
        {
+        WritePin(1,0,0); //G off
+        WritePin(1,5,1);//B on
         Serial.print("Fan on at ");
         GetTime();
         CountDuku2++; 
         CountDuku3 = 0;
        }
       }
-      else if (ct < 26)
+      else if (ct <= maxtemp)
       {
-       WritePin(1,4,0);
+       WritePin(1,4,0);//motor off
        if (CountDuku3 == 0)
        {
+        WritePin(1,0,1); //G on
+        WritePin(1,5,0);//B off
         Serial.print("Fan off at ");
         GetTime();
         CountDuku3++;
@@ -112,6 +119,7 @@
       WritePin(1,1,1); //Y on
       WritePin(1,0,0); //G off
       WritePin(1,4,0);
+      LastState = 0;
       if (CountDuku4 == 0)
       {
        Serial.print("Cooling diabled at ");
@@ -131,7 +139,7 @@ unsigned int OnOffStat()//detects button push, refrences the leds then outputs t
   red = (*PinLed & 0b00001000);
   if ((*PinLed & 0b00001000)&&(prev == 0)&&(millis() - t > db)) //button press and debug?
   {
-     if (*PinLed & 0b00000001)//if last state was on
+     if (LastState & 1)//if last state was on
       {
        ret = 2;
       }
