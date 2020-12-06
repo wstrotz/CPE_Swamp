@@ -2,6 +2,7 @@
  *  For cpe 301 Final progect.
  *  Revision 3.
  *  fixed count duku
+ *  fixed led onoffstat and added blue led i missed
  */
  // Includes
  //#include <Wire.h>
@@ -13,7 +14,7 @@
  RTC_DS1307 rtc;
  Servo vent;
  dht DHT;
- #define maxtemp 26
+ #define maxtemp 28
  
  // Declarations
  volatile unsigned char* DDRLed = (unsigned char*) 0x21;
@@ -27,7 +28,13 @@
  LiquidCrystal lcd(13, 12, 11, 10, 8, 7); //maps the pins to the lcd
  volatile unsigned int State = 2; //state of machine, 1 green go, 2 yellow idle
  unsigned int dispCounter = 0;
- unsigned int CountDuku = 0;
+ unsigned int CountDuku = 0; //counters for the serial
+ unsigned int CountDuku2 = 0;
+ unsigned int CountDuku3 = 0;
+ unsigned int CountDuku4 = 0;
+ unsigned int ct = 0;
+ unsigned int ret = 0;
+ unsigned int LastState = 0;
  
  //Protos (done automagically thru ardu apparently) lol guess not.
  unsigned int OnOffStat();
@@ -43,7 +50,7 @@
   rtc.begin();//start clock
   vent.attach(9);//attaches servo to analog pin 9
   lcd.begin(16, 2);
-  *DDRLed |= 0b00010111; //sets led to outputs and button to an input
+  *DDRLed |= 0b00110111; //sets led to outputs and button to an input
  }
  //Main
  void loop()
@@ -73,22 +80,53 @@
    switch (OnOffStat()) //essentially 2 seperate paths for the 2 active states above
    {
     case 1: //green go state 
+      CountDuku4 = 0;
       WritePin(1,2,0); //R off
       WritePin(1,1,0); //Y off 
-      WritePin(1,0,1); //G on
-      WritePin(1,4,1);
-      Serial.print("fan on at ");
-      GetTime();
       
+      LastState = 1;
+      if (ct > maxtemp)
+      {
+       WritePin(1,4,1);
+       if (CountDuku2 == 0)
+       {
+        WritePin(1,0,0); //G off
+        WritePin(1,5,1);//B on
+        Serial.print("Fan on at ");
+        GetTime();
+        CountDuku2++; 
+        CountDuku3 = 0;
+       }
+      }
+      else if (ct <= maxtemp)
+      {
+       WritePin(1,4,0);//motor off
+       if (CountDuku3 == 0)
+       {
+        WritePin(1,0,1); //G on
+        WritePin(1,5,0);//B off
+        Serial.print("Fan off at ");
+        GetTime();
+        CountDuku3++;
+       }
+      }
     break;
 
     case 2: //yellow idle state
+      CountDuku2 = 0;
+      CountDuku3 = 0;
       WritePin(1,2,0); //R off
       WritePin(1,1,1); //Y on
       WritePin(1,0,0); //G off
-      WritePin(1,4,0);
-      Serial.print("fan off at ");
-      GetTime();
+      WritePin(1,5,0); //B off
+      WritePin(1,4,0); //motor off
+      LastState = 0;
+      if (CountDuku4 == 0)
+      {
+       Serial.print("Cooling diabled at ");
+       GetTime();
+       CountDuku4++;
+      }
     break; 
    }
   }
@@ -98,12 +136,11 @@ unsigned int OnOffStat()//detects button push, refrences the leds then outputs t
 {
   long t = 0;
   long db = 200;
-  unsigned int ret = 0;
   unsigned int red = 0;
   red = (*PinLed & 0b00001000);
-  if ((*PinLed & 0b00001000)&&(prev == 0)&&(millis() - t > db)) //button press?
+  if ((*PinLed & 0b00001000)&&(prev == 0)&&(millis() - t > db)) //button press and debug?
   {
-     if (*PinLed & 0b00000001)//if last state was on
+     if (LastState & 1)//if last state was on
       {
        ret = 2;
       }
@@ -119,10 +156,10 @@ unsigned int OnOffStat()//detects button push, refrences the leds then outputs t
 //-----------------
 unsigned int DetectErr() //function should detect if an error is occuring. 1 if error 0 if none.
 {
-  if (analogRead(10) < 200)
-  {
-   return 1;
-  }
+  //if (analogRead(10) < 200)
+ // {
+  // return 1;
+ // }
  return 0;
 }
 //-----------------
@@ -170,7 +207,7 @@ void DispStats() //displays temp and humiditiy on lcd
   lcd.begin(16,2);
   lcd.setCursor(0,0); 
   lcd.print("Temp: ");
-  lcd.print(DHT.temperature);
+  lcd.print(ct = DHT.temperature);
   lcd.print((char)223);
   lcd.print("C");
   lcd.setCursor(0,1);
@@ -179,3 +216,4 @@ void DispStats() //displays temp and humiditiy on lcd
   lcd.print("%"); 
   }
 }
+//-----------------
