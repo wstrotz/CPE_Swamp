@@ -1,7 +1,7 @@
 /* Swamp cooler code by Willaim Strotz and D. Min.
  *  For cpe 301 Final progect.
  *  Revision alot
- *  added cooler pc reporting, so my swamp cooler is more human.
+ *  Monte carloed, more polish.
  */
  // Includes
  #include <RTClib.h>
@@ -68,6 +68,7 @@
    WritePin(1,2,1); //R on
    WritePin(1,1,0); //Y off
    WritePin(1,0,0); //G off
+   WritePin(1,5,0);// B off
    WritePin(1,4,0); // motor off
    Serial.print("Low water, refil to resume ");
    GetTime();
@@ -87,10 +88,10 @@
       if (ct > maxtemp)
       {
        WritePin(1,4,1);
+       WritePin(1,0,0); //G off
+       WritePin(1,5,1);//B on
        if (CountDuku2 == 0)
        {
-        WritePin(1,0,0); //G off
-        WritePin(1,5,1);//B on
         Serial.print("Fan on at ");
         GetTime();
         CountDuku2++; 
@@ -100,10 +101,10 @@
       else if (ct <= maxtemp)
       {
        WritePin(1,4,0);//motor off
+       WritePin(1,0,1); //G on
+       WritePin(1,5,0);//B off
        if (CountDuku3 == 0)
        {
-        WritePin(1,0,1); //G on
-        WritePin(1,5,0);//B off
         Serial.print("Fan off at ");
         GetTime();
         CountDuku3++;
