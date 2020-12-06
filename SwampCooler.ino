@@ -1,11 +1,9 @@
 /* Swamp cooler code by Willaim Strotz and D. Min.
  *  For cpe 301 Final progect.
- *  Revision 3.
- *  fixed count duku
- *  fixed led onoffstat and added blue led i missed
+ *  Revision alot
+ *  added cooler pc reporting, so my swamp cooler is more human.
  */
  // Includes
- //#include <Wire.h>
  #include <RTClib.h>
  #include <Servo.h>
  #include <LiquidCrystal.h>
@@ -48,6 +46,7 @@
  {
   Serial.begin(9600);
   rtc.begin();//start clock
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   vent.attach(9);//attaches servo to analog pin 9
   lcd.begin(16, 2);
   *DDRLed |= 0b00110111; //sets led to outputs and button to an input
@@ -156,10 +155,10 @@ unsigned int OnOffStat()//detects button push, refrences the leds then outputs t
 //-----------------
 unsigned int DetectErr() //function should detect if an error is occuring. 1 if error 0 if none.
 {
-  //if (analogRead(10) < 200)
- // {
-  // return 1;
- // }
+  if (analogRead(10) < 200)
+  {
+   return 1;
+  }
  return 0;
 }
 //-----------------
