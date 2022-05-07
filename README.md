@@ -1,2 +1,3 @@
 # CPE_Swamp
-The swamp cooler code. Insert Shreck joke
+This is code for CPE 301 Embeded systems desgin.
+Built for an arduino MEGA.
